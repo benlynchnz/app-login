@@ -24,18 +24,12 @@ function getVersion(callback) {
     if (err) {
       console.warn(err);
     }
-		console.log("data", data);
     var last = data.Contents.sort(function(item) {
       return item.LastModified;
     });
-
-		console.log("last");
-		console.log(last);
-
-    var version = last[0].Key.replace(config.s3URI, "").replace("/", "");
-    var int = Number(version.replace("/", ""));
-    int = int + 1;
-    callback(null, int);
+    var version = last[0].Key.split("/")[1];
+    version = Number(version) + 1;
+    callback(null, version);
   });
 }
 
