@@ -5,9 +5,12 @@ var http = require("http");
 var st = require("st");
 var path = require("path");
 var s3 = require("gulp-awspublish");
+var fs = require("fs");
 var config = require("./package.json");
 var rename = require("gulp-rename");
+var moment = require("moment");
 var aws = require("aws-sdk");
+var jsonfile = require("jsonfile");
 var s3Fetch = new aws.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -17,25 +20,48 @@ var s3Fetch = new aws.S3({
 function getVersion(callback) {
   var params = {
     Bucket: process.env.AWS_BUCKET,
-    Prefix: config.s3URI
+    Key: config.s3URI + "/version.json"
+    // Prefix: config.s3URI
   };
 
-  s3Fetch.listObjects(params, function(err, data) {
-    if (err) {
+  s3Fetch.getObject(params, function(err, data) {
+    if (err && err.statusCode === 404) {
       console.warn(err);
-    }
-    var last = data.Contents.sort(function(item) {
-      return item.LastModified;
-    });
-    var version = last[0].Key.split("/")[1];
-    version = Number(version) + 1;
-    callback(null, version);
+      var file = "./version.json";
+      var obj = {
+        version: 0,
+        created_at: moment().toISOString(),
+        updated_at: moment().toISOString()
+      };
+      jsonfile.writeFile(file, obj, { spaces: 2 }, function(error) {
+        console.error(error);
+        var params = {
+          Bucket: process.env.AWS_BUCKET,
+          Key: config.s3URI + "/version.json",
+          Body: new Buffer(fs.readFileSync("./version.json")).toString(),
+          ContentType: "application/json",
+          CacheControl: "max-age=0, no-transform, public"
+        };
+        s3Fetch.putObject(params, function(err, data) {
+          console.log(err);
+          console.log(data);
+        });
+      });
+    } else {
+	    console.log(data);
+
+			var file = new Buffer(data.Body).toString();
+			file = JSON.parse(file);
+
+			var version = file.version + 1;
+			callback(null, version);
+		}
   });
 }
 
 gulp.task("deploy", function() {
 
-	getVersion(function(err, version) {
+  getVersion(function(err, version) {
 
   var publisher = s3.create({
     accessKeyId: process.env.AWS_ACCESS_KEY,
@@ -66,7 +92,7 @@ gulp.task("deploy", function() {
     .pipe(publisher.publish(headers))
     .pipe(s3.reporter());
 
-	});
+  });
 });
 
 gulp.task("html", function() {
