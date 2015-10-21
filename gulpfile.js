@@ -54,7 +54,30 @@ function getVersion(callback) {
       file = JSON.parse(file);
 
       var version = file.version + 1;
-      callback(null, version);
+
+      var update = {
+        version: version,
+        created_at: file.created_at,
+        updated_at: moment().toISOString()
+      };
+
+			var file = "./version.json";
+
+      jsonfile.writeFile(file, obj, { spaces: 2 }, function(error) {
+        console.error(error);
+        var params = {
+          Bucket: process.env.AWS_BUCKET,
+          Key: config.s3URI + "/version.json",
+          Body: new Buffer(fs.readFileSync("./version.json")).toString(),
+          ContentType: "application/json",
+          CacheControl: "max-age=0, no-transform, public"
+        };
+        s3Fetch.putObject(params, function(err, data) {
+          console.log(err);
+          console.log(data);
+          callback(null, version);
+        });
+      });
     }
   });
 }
