@@ -1,0 +1,49 @@
+{
+  "name": "app-login",
+  "s3URI": "app-login",
+  "version": "0.0.1",
+  "description": "test",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --compilers js:mocha-traceur"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benlynchnz/app-login.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/benlynchnz/codeship/issues"
+  },
+  "homepage": "https://github.com/benlynchnz/codeship#readme",
+  "dependencies": {
+    "moment": "^2.10.6"
+  },
+  "devDependencies": {
+    "autoprefixer": "^6.0.3",
+    "babel-core": "^5.8.25",
+    "babel-eslint": "^4.1.3",
+    "babel-loader": "^5.3.2",
+    "chai": "^3.3.0",
+    "connect": "^3.4.0",
+    "css-loader": "^0.19.0",
+    "eslint": "^1.6.0",
+    "eslint-plugin-babel": "^2.1.1",
+    "eslint-plugin-react": "^3.5.1",
+    "extract-text-webpack-plugin": "^0.8.2",
+    "gulp": "^3.9.0",
+    "gulp-awspublish": "^3.0.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-watch": "^4.3.5",
+    "gulp-webpack": "^1.5.0",
+    "mocha": "^2.3.3",
+    "mocha-traceur": "^2.1.0",
+    "postcss-color-rebeccapurple": "^2.0.0",
+    "postcss-loader": "^0.7.0",
+    "st": "^1.0.0",
+    "style-loader": "^0.13.0",
+    "webdriverio": "^3.2.5",
+    "webpack": "^1.12.2"
+  }
+}

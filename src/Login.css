@@ -1,0 +1,28 @@
+body {
+  background-color: #f8f8f8;
+  margin: 0;
+  padding: 0;
+  font-family: "Roboto";
+}
+
+h1 {
+  font-size: 300;
+}
+
+.header {
+  height: 64px;
+  width: 100%;
+  background-color: #ee3124;
+  display: block;
+  margin-bottom: 50px;
+}
+
+.content {
+  margin: 0 auto;
+  width: 400px;
+  height: 400px;
+  background-color: #fff;
+  border: 1px solid #eee;
+  display: block;
+  padding: 20px;
+}
