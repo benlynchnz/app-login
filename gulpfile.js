@@ -63,7 +63,7 @@ function getVersion(callback) {
 
 			var file = "./version.json";
 
-      jsonfile.writeFile(file, obj, { spaces: 2 }, function(error) {
+      jsonfile.writeFile(file, update, { spaces: 2 }, function(error) {
         console.error(error);
         var params = {
           Bucket: process.env.AWS_BUCKET,
