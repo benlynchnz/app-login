@@ -4,19 +4,23 @@
   } else {
     var uri = document._currentScript.ownerDocument.baseURI;
   }
-  console.log(uri);
-  uri = uri.split("/");
 
-  var http = uri[0] + "//";
-  var domain = uri[2] + "/";
-  var path = uri[3] + "/";
-  var version = uri[4] + "/";
-  var filename = "app-login.css";
-
+  var filename;
   var css = document.createElement("link");
-
   css.rel = "stylesheet";
-  css.href = http + domain + path + version + filename;
+
+  if (uri.indexOf("localhost") !== -1) {
+    filename = "./app-login.css";
+    css.href = filename;
+  } else {
+    uri = uri.split("/");
+    var http = uri[0] + "//";
+    var domain = uri[2] + "/";
+    var path = uri[3] + "/";
+    var version = uri[4] + "/";
+    filename = "app-login.css";
+    css.href = http + domain + path + version + filename;
+  }
 
   document.head.appendChild(css);
 </script>
