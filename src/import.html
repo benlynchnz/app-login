@@ -3,14 +3,15 @@
   uri = uri.split("/");
 
   var http = uri[0] + "//";
-  var domain = uri[2];
-  var path = uri[3];
-  var version = uri[4];
+  var domain = uri[2] + "/";
+  var path = uri[3] + "/";
+  var version = uri[4] + "/";
+  var filename = "app-login.css";
 
   var css = document.createElement("link");
 
   css.rel = "stylesheet";
-  css.href = http + domain + path + version + "/app-login.css";
+  css.href = http + domain + path + version + filename;
 
   document.head.appendChild(css);
 </script>
