@@ -39,6 +39,7 @@
     "gulp-watch": "^4.3.5",
     "gulp-webpack": "^1.5.0",
     "jsonfile": "^2.2.3",
+    "lodash": "^3.10.1",
     "mocha": "^2.3.3",
     "mocha-traceur": "^2.1.0",
     "moment": "^2.10.6",

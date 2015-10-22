@@ -5,6 +5,7 @@ var http = require("http");
 var st = require("st");
 var path = require("path");
 var s3 = require("gulp-awspublish");
+var _ = require("lodash");
 var fs = require("fs");
 var config = require("./package.json");
 var rename = require("gulp-rename");
@@ -17,76 +18,75 @@ var s3Fetch = new aws.S3({
   region: process.env.AWS_REGION
 });
 
-function getVersion(callback) {
-  var params = {
-    Bucket: process.env.AWS_BUCKET,
-    Key: config.s3URI + "/version.json"
-    // Prefix: config.s3URI
-  };
+var params = {
+  Bucket: process.env.AWS_BUCKET
+};
 
-  s3Fetch.getObject(params, function(err, data) {
-    if (err && err.statusCode === 404) {
-      console.warn(err);
-      var file = "./version.json";
-      var obj = {
-        version: 0,
-        created_at: moment().toISOString(),
-        updated_at: moment().toISOString()
-      };
-      jsonfile.writeFile(file, obj, { spaces: 2 }, function(error) {
-        console.error(error);
-        var params = {
-          Bucket: process.env.AWS_BUCKET,
-          Key: config.s3URI + "/version.json",
-          Body: new Buffer(fs.readFileSync("./version.json")).toString(),
-          ContentType: "application/json",
-          CacheControl: "max-age=0, no-transform, public"
-        };
-        s3Fetch.putObject(params, function(err, data) {
-          console.log(err);
-          console.log(data);
-        });
-      });
-    } else {
-      console.log(data);
-
-      var file = new Buffer(data.Body).toString();
-      file = JSON.parse(file);
-
-      var version = file.version + 1;
-
-      var update = {
-        version: version,
-        created_at: file.created_at,
-        updated_at: moment().toISOString()
-      };
-
-			var file = "./version.json";
-
-      jsonfile.writeFile(file, update, { spaces: 2 }, function(error) {
-        console.error(error);
-        var params = {
-          Bucket: process.env.AWS_BUCKET,
-          Key: config.s3URI + "/version.json",
-          Body: new Buffer(fs.readFileSync("./version.json")).toString(),
-          ContentType: "application/json",
-          CacheControl: "max-age=0, no-transform, public"
-        };
-        s3Fetch.putObject(params, function(err, data) {
-          console.log(err);
-          console.log(data);
-          callback(null, version);
-        });
-      });
-    }
+var put = function(data, opts) {
+  opts.ContentType = "application/json";
+  opts.CacheControl = "max-age=0, no-transform, public";
+  params = _.merge(params, opts);
+  var result = new Promise(function(resolve, reject) {
+    s3Fetch.putObject(params, function(err, res) {
+      if (err) {
+        reject(err);
+      }
+      resolve(res);
+    });
   });
-}
+
+  return result;
+};
+
+var get = function(file) {
+  params.Key = file;
+  var result = new Promise(function(resolve, reject) {
+    s3Fetch.getObject(params, function(err, data) {
+      if (err) {
+        reject(err);
+      }
+      resolve(data);
+    });
+  });
+
+  return result;
+};
+
+var getVersion = function() {
+  var file = config.s3URI + "/version.json";
+  var result = new Promise(function(resolve, reject) {
+    get(file).then(function(res) {
+      resolve(JSON.parse(res.Body.toString()));
+    }).catch(function(err) {
+      if (err.statusCode === 404) {
+        var payload = {
+          version: 0,
+          created_at: moment().toISOString(),
+          updated_at: moment().toISOString()
+        };
+        var opts = {
+          Key: file,
+          Body: JSON.stringify(payload)
+        };
+        put(file, opts).then(function(res) {
+          resolve(payload);
+        }).catch(function(error) {
+          reject(error);
+        });
+      } else {
+        reject(err);
+      }
+    });
+  });
+
+  return result;
+};
 
 gulp.task("deploy", function() {
-
-  getVersion(function(err, version) {
-    var file = "./dist/build.json";
-    var obj = {
+  getVersion().then(function(res) {
+    var version = res.version + 1;
+    var file = config.s3URI + "/" + version + "/build.json";
+    var payload = {
       version: version,
       created_at: moment().toISOString(),
       updated_at: moment().toISOString(),
@@ -98,29 +98,47 @@ gulp.task("deploy", function() {
       committer_username: process.env.CI_COMMITTER_USERNAME || null,
       message: process.env.CI_MESSAGE || null
     };
-    jsonfile.writeFile(file, obj, { spaces: 2 }, function(error) {
-      var publisher = s3.create({
-        accessKeyId: process.env.AWS_ACCESS_KEY,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        region: process.env.AWS_REGION,
-        params: {
-          Bucket: process.env.AWS_BUCKET
-        }
-      });
-
-      var headers = {
-        "Cache-Control": "max-age=99999999, no-transform, public"
+    var opts = {
+      Key: file,
+      Body: JSON.stringify(payload)
+    };
+    put(file, opts).then(function(res) {
+      var file = config.s3URI + "/version.json";
+      var opts = {
+        version: version,
+        created_at: res.created_at,
+        updated_at: moment().toISOString()
       };
+      var opts = {
+        Key: file,
+        Body: JSON.stringify(opts)
+      };
+      put(file, opts).then(function(result) {
+        var publisher = s3.create({
+          accessKeyId: process.env.AWS_ACCESS_KEY,
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+          region: process.env.AWS_REGION,
+          params: {
+            Bucket: process.env.AWS_BUCKET
+          }
+        });
 
-      return gulp.src([ "./dist/*" ])
-        .pipe(rename(function(path) {
-          path.dirname += "/" + config.s3URI + "/" + version;
-        }))
-        .pipe(publisher.publish(headers))
-        .pipe(s3.reporter());
+        var headers = {
+          "Cache-Control": "max-age=99999999, no-transform, public"
+        };
+
+        return gulp.src([ "./dist/*" ])
+          .pipe(rename(function(path) {
+            path.dirname += "/" + config.s3URI + "/" + version;
+          }))
+          .pipe(publisher.publish(headers))
+          .pipe(s3.reporter());
       });
-    });
 
+    });
+  }).catch(function(err) {
+    console.log(err);
+  });
 });
 
 gulp.task("html", function() {
