@@ -1,6 +1,10 @@
 <script>
-  var uri = document._currentScript.ownerDocument.URL;
-  debugger;
+  if (navigator.userAgent.indexOf("Chrome") !== -1) {
+    var uri = document._currentScript.ownerDocument.URL;
+  } else {
+    var uri = document.HTMLImports.currentScript.baseURI;
+  }
+  console.log(uri);
   uri = uri.split("/");
 
   var http = uri[0] + "//";
