@@ -1,14 +1,17 @@
 <script>
+  var uri = document._currentScript.ownerDocument.URL;
+  uri = uri.split("/");
+
+  var http = uri[0] + "//";
+  var domain = uri[2];
+  var path = uri[3];
+  var version = uri[4];
+
   var css = document.createElement("link");
 
   css.rel = "stylesheet";
-  css.href = "./app-login.css";
+  css.href = http + domain + path + version + "/app-login.css";
 
   document.head.appendChild(css);
-
-  console.log(document._currentScript.ownerDocument.URL);
-
-  debugger;
-  
 </script>
 <script src="./app-login.js"></script>
